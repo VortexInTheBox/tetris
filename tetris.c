@@ -1,3 +1,5 @@
+#define _DEFAULT_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -104,6 +106,8 @@ const int tetrominos [7][N][N] = {
         {0, 0, 0, 0}
     }
 };
+
+
 
 typedef struct {
     int x;
@@ -231,18 +235,6 @@ void rotate_right(tetromino *t){
             t->piece[y][x] = tmp[y][x];
 }
 
-int hard_drop(int arena[ARENA_SIZE_Y][ARENA_SIZE_X], tetromino *t) {
-    int y = ARENA_SIZE_Y - 1;
-    while(t->y++) { 
-        if (!is_valid_position(arena, *t)) {
-            t->y--;
-            update_arena(arena, *t);
-            break;
-        }
-    }
-    
-}
-
 void clear_full_lines(int arena[ARENA_SIZE_Y][ARENA_SIZE_X]) {
     for (int y = ARENA_SIZE_Y - 1; y >= 0; y--) {
 
@@ -256,13 +248,40 @@ void clear_full_lines(int arena[ARENA_SIZE_Y][ARENA_SIZE_X]) {
         }
 
         if (full) {
-            for (int z = y; z > 0; z--)
+            for (int z = y; z > 0; z--) {
                 for (int x = 0; x < ARENA_SIZE_X; x++)
                     arena[z][x] = arena[z - 1][x];
+            }
 
-            y--;
+            for (int x = 0; x < ARENA_SIZE_X; x++)
+                arena[0][x] = 0;
+
+            y++;
         }
     }
+}
+
+void lock_piece(game_state *g) {
+    update_arena(g->arena, g->current_tetromino);
+    clear_full_lines(g->arena);
+
+    setup_tetromino(&g->current_tetromino, rand() % 7, 3, 0);
+}
+
+void hard_drop(game_state *g) {
+    tetromino *t = &g->current_tetromino;
+
+    while (1) {
+        tetromino tmp = *t;
+        tmp.y++;
+
+        if (!is_valid_position(g->arena, tmp))
+            break;
+
+        t->y++;
+    }
+
+    lock_piece(g);
 }
 
 command input() {
@@ -301,7 +320,7 @@ void apply_command(game_state *g, command cmd) {
         break;
 
     case CMD_HARD_DROP:
-        hard_drop(g->arena, &tmp);
+        hard_drop(g);
         //clear_full_lines(g->arena);
         setup_tetromino(&tmp, rand() % 7, 2, 2);
         break;
@@ -340,24 +359,23 @@ void apply_command(game_state *g, command cmd) {
 
 void update(game_state *g) {
     g->gravity_timer--;
-    if (g->gravity_timer == 0) {
-        g->gravity_timer = GRAVITY_TIME;
-        tetromino tmp = g->current_tetromino;
 
-        tmp.y += 1;
+    if (g->gravity_timer <= 0) {
+        g->gravity_timer = GRAVITY_TIME;
+
+        tetromino tmp = g->current_tetromino;
+        tmp.y++;
+
         if (is_valid_position(g->arena, tmp)) {
             g->current_tetromino = tmp;
         }
         else {
-            update_arena(g->arena, g->current_tetromino);
-            setup_tetromino(&g->current_tetromino, rand() % 7, 2, 2);
+            lock_piece(g);
         }
-        clear_full_lines(g->arena);
     }
 }
 
-int main()
-{
+int main() {
     setlocale(LC_ALL, "");
 
     initscr();
@@ -385,7 +403,7 @@ int main()
     setup_tetromino(&game.current_tetromino, rand() % 7, 2, 2);
 
     game.gameover = 0;
-    game.gravity_timer = 500;
+    game.gravity_timer = GRAVITY_TIME;
 
     while (!game.gameover) {
         command cmd = input();
@@ -396,7 +414,7 @@ int main()
 
         print_arena(game.arena, game.current_tetromino);
 
-        usleep(1000);
+        usleep(GRAVITY_TIME*10);
     }
 
     endwin();
