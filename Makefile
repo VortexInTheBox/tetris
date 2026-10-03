@@ -16,4 +16,7 @@ clean:
 run: $(TARGET)
 	./$(TARGET)
 
+format:
+	clang-format -i $(SRC)
+
 .PHONY: all clean run
