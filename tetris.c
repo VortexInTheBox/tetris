@@ -1,19 +1,19 @@
 #define _DEFAULT_SOURCE
 
+#include <curses.h>
+#include <inttypes.h>
+#include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <inttypes.h>
-#include <unistd.h>
 #include <time.h>
-#include <curses.h>
+#include <unistd.h>
 #include <wchar.h>
-#include <locale.h>
 
 #define ARENA_SIZE_X 10
 #define ARENA_SIZE_Y 20
 #define N 4
-#define GRAVITY_TIME 250 //millisecondi
+#define GRAVITY_TIME 250 // ms
 
 typedef enum {
     CMD_NONE = 0,
@@ -26,6 +26,7 @@ typedef enum {
     CMD_ROT_LEFT
 } command;
 
+// clang-format off
 const int tetrominos [7][N][N] = {
     /*
     I:
@@ -107,7 +108,7 @@ const int tetrominos [7][N][N] = {
     }
 };
 
-
+// clang-format off
 
 typedef struct {
     int x;
